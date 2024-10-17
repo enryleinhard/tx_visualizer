@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import polars as pl
 
@@ -15,12 +14,12 @@ supabase = initialize_supabase_connection()
 
 @st.cache_data(ttl=60)
 def query_tx_data():
-    return supabase.table(st.secrets["SUPABASE_TX_TABLE_KEY"]).select().execute()
+    return supabase.table(st.secrets["SUPABASE_TX_TABLE_KEY"]).select().execute().data
 
 
 def main():
     st.title("Transaction Data Visualizer")
-    st.write(query_tx_data())
+    st.write(pl.DataFrame(query_tx_data()))
 
 
 main()
