@@ -28,7 +28,6 @@ def query_tx_data(month):
 
 
 def main():
-    st.write(st.session_state)
     st.title("Transaction Data Visualizer")
     st.selectbox(
         "Month:",
@@ -36,10 +35,7 @@ def main():
         key="month",
     )
     tx_data = query_tx_data(st.session_state.month)
-    if tx_data:
-        st.write(pl.DataFrame(tx_data))
-    else:
-        st.write("No data found for this month")
+    st.write(pl.DataFrame(tx_data))
 
 
 main()
