@@ -2,19 +2,25 @@ import os
 import streamlit as st
 import polars as pl
 
-from dotenv import load_dotenv
-from supabase import create_client, Client
+from supabase import create_client
 
-load_dotenv()
-supabase_url: str = os.getenv('SUPABASE_URL')
-supabase_key: str = os.getenv('SUPABASE_KEY')
-supabase_tx_table_key = 'transaction'
 
-supabase: Client = create_client(supabase_url, supabase_key)
-tx_table_response = supabase.table(supabase_tx_table_key).select().execute()
+@st.cache_resource
+def initialize_supabase_connection():
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
-tx_df = pl.DataFrame(tx_table_response.data)
 
-st.set_page_config(page_title='Transaction Visualizer', page_icon=':moneybag:', layout='wide')
-st.title(f'Transaction Visualizer')
-tx_df
+supabase = initialize_supabase_connection()
+
+
+@st.cache_data(ttl=60)
+def query_tx_data():
+    return supabase.table(st.secrets["SUPABASE_TX_TABLE_KEY"]).select().execute()
+
+
+def main():
+    st.title("Transaction Data Visualizer")
+    st.write(query_tx_data())
+
+
+main()
