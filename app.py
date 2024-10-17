@@ -1,7 +1,6 @@
-import json
 import os
 import streamlit as st
-import polars as pl 
+import pandas as pd
 
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -14,8 +13,8 @@ supabase_tx_table_key = 'transaction'
 supabase: Client = create_client(supabase_url, supabase_key)
 tx_table_response = supabase.table(supabase_tx_table_key).select().execute()
 
-tx_df = pl.DataFrame(tx_table_response.data)
+tx_df = pd.DataFrame(tx_table_response.data)
 
-st.set_page_config(page_icon=':moneybag:', layout='wide')
+st.set_page_config(page_title='Transaction Visualizer', page_icon=':moneybag:', layout='wide')
 st.title(f'Transaction Visualizer')
 tx_df
