@@ -52,11 +52,11 @@ def main():
     
     c1, c2 = st.columns(2)
     tx_df["tx_date"] = pd.to_datetime(tx_df["tx_date"])
-    
+
     with c1:
-        st.write("Total transaction(s):", len(tx_df))
+        st.write("Number of transaction(s):", len(tx_df))
         st.write(
-            "Total transaction(s) amount:",
+            "Total transaction(s):",
             tx_df["tx_amount"].sum(),
         )
         st.write("Transaction(s):")
@@ -81,7 +81,7 @@ def main():
 
     with c2:
 
-        st.write("Total daily transaction(s}:")
+        st.write("Total transaction(s) by category:")
         category_sum = category_sum_data_transformer(tx_df)
         category_sum.reset_index(inplace=True)
         category_sum_chart = (
