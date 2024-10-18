@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 
 from supabase import create_client
 
@@ -19,7 +20,6 @@ def query_tx_data(month):
         supabase.table(st.secrets["SUPABASE_TX_TABLE_KEY"])
         .select()
         .like("tx_date", f"%-{month}-%")
-        .order("tx_date", desc=True)
         .execute()
         .data
     )
@@ -45,6 +45,7 @@ def main():
         key="month",
     )
     tx_df = pd.DataFrame(query_tx_data(st.session_state.month))
+    tx_df["tx_date"] = pd.to_datetime(tx_df["tx_date"])
 
     c1, c2 = st.columns(2)
     if tx_df.empty:
@@ -78,13 +79,36 @@ def main():
             st.rerun()
 
     with c2:
-        c2.write("Total transaction(s) daily:")
-        daily_sum = daily_sum_data_transformer(tx_df)
-        daily_sum
 
-        c2.write("Total transaction(s) by category:")
-        category_sum = category_sum_data_transformer(tx_df)
-        category_sum
+
+            st.write("Total daily transaction(s}:")
+            category_sum = category_sum_data_transformer(tx_df)
+            category_sum.reset_index(inplace=True)
+            category_sum_chart = (
+                alt.Chart(category_sum)
+                .mark_arc()
+                .encode(
+                    theta="tx_amount",
+                    color="category",
+                )
+                .properties(height=480)
+            )
+            st.altair_chart(category_sum_chart, use_container_width=True)
+
+
+            st.write("Total transaction(s) daily:")
+            daily_sum = daily_sum_data_transformer(tx_df)
+            daily_sum.reset_index(inplace=True)
+            daily_sum_chart = (
+                alt.Chart(daily_sum)
+                .mark_bar()
+                .encode(
+                    x=alt.X("tx_date", title="Date"),
+                    y=alt.Y("tx_amount", title="Amount"),
+                )
+                .properties(height=480)
+            )
+            st.altair_chart(daily_sum_chart, use_container_width=True)
 
 
 main()
