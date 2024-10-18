@@ -1,11 +1,9 @@
 import streamlit as st
-import polars as pl
+import pandas as pd
 
 from supabase import create_client
 
-st.set_page_config(
-    page_title="Transaction Data Visualizer", page_icon="💵", layout="wide"
-)
+st.set_page_config(page_title="Transaction Data", page_icon="💵", layout="wide")
 
 
 @st.cache_resource
@@ -16,26 +14,77 @@ def initialize_supabase_connection():
 supabase = initialize_supabase_connection()
 
 
-@st.cache_data(ttl=60)
 def query_tx_data(month):
     return (
         supabase.table(st.secrets["SUPABASE_TX_TABLE_KEY"])
         .select()
         .like("tx_date", f"%-{month}-%")
+        .order("tx_date", desc=True)
         .execute()
         .data
     )
 
 
+def daily_sum_data_transformer(tx_df):
+    daily_sum = tx_df.groupby("tx_date").aggregate({"tx_amount": "sum"})
+    daily_sum.index = pd.to_datetime(daily_sum.index)
+    daily_sum.index = daily_sum.index.strftime("%d")
+    return daily_sum
+
+
+def category_sum_data_transformer(tx_df):
+    category_sum = tx_df.groupby("category").aggregate({"tx_amount": "sum"})
+    return category_sum
+
+
 def main():
-    st.title("Transaction Data Visualizer")
+    st.title("Transaction Data")
     st.selectbox(
-        "Month:",
+        "Month",
         range(1, 13),
         key="month",
     )
-    tx_data = query_tx_data(st.session_state.month)
-    st.write(pl.DataFrame(tx_data))
+    tx_df = pd.DataFrame(query_tx_data(st.session_state.month))
+
+    c1, c2 = st.columns(2)
+    if tx_df.empty:
+        st.warning("No data found for the selected month.")
+        return
+
+    with c1:
+        st.write("Total transaction(s):", len(tx_df))
+        st.write(
+            "Total transaction(s) amount:",
+            tx_df["tx_amount"].sum(),
+        )
+        st.write("Transaction(s):")
+        edit_df = c1.data_editor(
+            tx_df,
+            column_config={"id": None},
+            width=(1440),
+            height=((len(tx_df) + 1) * 35 + 3),
+        )
+
+        difference = (
+            tx_df.merge(edit_df, how="outer", indicator=True)
+            .loc[lambda x: x["_merge"] == "right_only"]
+            .drop(columns="_merge")
+        )
+
+        if not difference.empty:
+            supabase.table(st.secrets["SUPABASE_TX_TABLE_KEY"]).upsert(
+                difference.to_dict(orient="records")
+            ).execute()
+            st.rerun()
+
+    with c2:
+        c2.write("Total transaction(s) daily:")
+        daily_sum = daily_sum_data_transformer(tx_df)
+        daily_sum
+
+        c2.write("Total transaction(s) by category:")
+        category_sum = category_sum_data_transformer(tx_df)
+        category_sum
 
 
 main()
