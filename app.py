@@ -74,6 +74,7 @@ def main():
         )
 
         if not difference.empty:
+            difference['tx_date'] = difference['tx_date'].dt.strftime('%Y-%m-%d')
             supabase.table(st.secrets["SUPABASE_TX_TABLE_KEY"]).upsert(
                 difference.to_dict(orient="records")
             ).execute()
