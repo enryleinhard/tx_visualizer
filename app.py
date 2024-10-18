@@ -56,7 +56,7 @@ def main():
     with c1:
         st.write("Number of transaction(s):", len(tx_df))
         st.write(
-            "Total transaction(s):",
+            "Total transaction(s) amount:",
             tx_df["tx_amount"].sum(),
         )
         st.write("Transaction(s):")
