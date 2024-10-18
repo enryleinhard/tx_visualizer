@@ -84,14 +84,20 @@ def main():
         st.write("Total transaction(s) by category:")
         category_sum = category_sum_data_transformer(tx_df)
         category_sum.reset_index(inplace=True)
-        category_sum_chart = (
+        category_sum_base_chart = (
             alt.Chart(category_sum)
-            .mark_arc()
             .encode(
-                theta="tx_amount",
-                color="category",
+                alt.Theta("tx_amount:Q", stack=True),
+                alt.Color("category:N", scale=alt.Scale(scheme="category10")),
             )
-            .properties(height=480)
+        )
+        category_sum_pie_chart = category_sum_base_chart.mark_arc(outerRadius=160)
+        category_sum_text_chart = category_sum_base_chart.mark_text(radius=200).encode(
+            text="tx_amount",
+            size=alt.value(14),
+        )
+        category_sum_chart = (category_sum_pie_chart + category_sum_text_chart).properties(
+            height=400
         )
         st.altair_chart(category_sum_chart, use_container_width=True)
 
@@ -100,12 +106,19 @@ def main():
         daily_sum.reset_index(inplace=True)
         daily_sum_chart = (
             alt.Chart(daily_sum)
-            .mark_bar()
             .encode(
                 x=alt.X("tx_date", title="Date"),
                 y=alt.Y("tx_amount", title="Amount"),
             )
-            .properties(height=480)
+        )
+        daily_sum_bar_chart = daily_sum_chart.mark_bar()
+        daily_sum_text_chart = daily_sum_chart.mark_text(dy=-12).encode(
+            text="tx_amount",
+            size=alt.value(14),
+            color=alt.value("white"),
+        )
+        daily_sum_chart = (daily_sum_bar_chart + daily_sum_text_chart).properties(
+            height=480
         )
         st.altair_chart(daily_sum_chart, use_container_width=True)
 
